@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperbridge Token Bridge</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        select, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .wallet-info {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .chain-selector {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .chain-box {
+            flex: 1;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .chain-box:not(:last-child) {
+            margin-right: 10px;
+        }
+        .arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Hyperbridge Token Bridge</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 20px;">
+            Bridge tokens securely between Paseo and ETH Sepolia using Hyperbridge
+        </p>
+
+        <div class="wallet-info" id="walletInfo">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>Connected:</strong> <span id="walletAddress"></span><br>
+                    <small>Network: <span id="currentNetwork">Unknown</span></small>
+                </div>
+                <button id="disconnectWallet" onclick="disconnectWallet()" style="background: #dc3545; padding: 5px 10px; font-size: 12px;">Disconnect</button>
+            </div>
+        </div>
+
+        <div id="metamaskPrompt" style="display: none; background: #e3f2fd; border: 1px solid #2196f3; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+            <strong>🔗 MetaMask Required</strong><br>
+            Please install <a href="https://metamask.io/" target="_blank">MetaMask</a> to use this bridge.
+        </div>
+
+        <button id="connectWallet" onclick="connectWallet()" style="background: #f6851b; color: white;">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;">
+            Connect MetaMask
+        </button>
+
+        <div class="chain-selector">
+            <div class="chain-box">
+                <label>Source Chain</label>
+                <select id="sourceChain">
+                    <option value="">Select Source Chain</option>
+                    <option value="paseo" selected>Paseo (Primary)</option>
+                    <option value="11155111">ETH Sepolia</option>
+                    <option value="97">BSC Testnet</option>
+                    <option value="11155420">Optimism Sepolia</option>
+                </select>
+            </div>
+            <div class="arrow">→</div>
+            <div class="chain-box">
+                <label>Destination Chain</label>
+                <select id="destChain">
+                    <option value="">Select Destination Chain</option>
+                    <option value="11155111" selected>ETH Sepolia (Primary)</option>
+                    <option value="paseo">Paseo</option>
+                    <option value="97">BSC Testnet</option>
+                    <option value="11155420">Optimism Sepolia</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="tokenAddress">Token Contract Address</label>
+            <input type="text" id="tokenAddress" placeholder="0x...">
+        </div>
+
+        <div class="form-group">
+            <label for="tokenSymbol">Token Symbol</label>
+            <input type="text" id="tokenSymbol" placeholder="e.g., USDC" required>
+        </div>
+
+        <div class="form-group">
+            <label for="amount">Amount to Bridge</label>
+            <input type="number" id="amount" placeholder="100" step="0.000001" min="0" required>
+        </div>
+
+        <div class="form-group">
+            <label for="recipient">Recipient Address</label>
+            <input type="text" id="recipient" placeholder="0x..." required>
+        </div>
+
+        <button id="bridgeButton" onclick="bridgeTokens()" disabled>Bridge Tokens</button>
+
+        <div class="status" id="statusMessage"></div>
+    </div>
+
+    <script>
+        let provider;
+        let signer;
+        let userAddress;
+        let tokenBridgeContract;
+
+    // Contract addresses for Paseo and connected chains
+    const CONTRACT_ADDRESSES = {
+            'paseo': { // Paseo Testnet
+                tokenGateway: '0x...', // Replace with deployed TokenBridge address on Paseo
+                feeToken: '0x...' // Replace with fee token address on Paseo
+            },
+            '11155111': { // ETH Sepolia (connected via Hyperbridge)
+                tokenGateway: '0x...', // Replace with deployed TokenBridge address on Sepolia
+                feeToken: '0x...' // Replace with fee token address on Sepolia
+            }
+        };
+
+        // Network configurations
+        const NETWORKS = {
+            'paseo': {
+                chainId: '0x...',
+                chainName: 'Paseo Testnet',
+                nativeCurrency: { name: 'Paseo', symbol: 'PAS', decimals: 18 },
+                rpcUrls: ['https://paseo.rpc.amplica.io/', 'https://rpc.ibp.network/paseo'],
+                blockExplorerUrls: ['https://paseo.subscan.io/']
+            },
+            '11155111': {
+                chainId: '0xaa36a7',
+                chainName: 'Sepolia',
+                nativeCurrency: { name: 'SepoliaETH', symbol: 'ETH', decimals: 18 },
+                rpcUrls: ['https://sepolia.infura.io/v3/'],
+                blockExplorerUrls: ['https://sepolia.etherscan.io/']
+            },
+            '97': { // BSC Testnet
+                chainId: '0x61',
+                chainName: 'BSC Testnet',
+                nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+                rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
+                blockExplorerUrls: ['https://testnet.bscscan.com/']
+            },
+            '11155420': { // Optimism Sepolia
+                chainId: '0xaa37dc',
+                chainName: 'Optimism Sepolia',
+                nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                rpcUrls: ['https://sepolia.optimism.io'],
+                blockExplorerUrls: ['https://sepolia-optimism.etherscan.io/']
+            }
+        };
+
+        async function connectWallet() {
+            try {
+                if (!window.ethereum) {
+                    throw new Error('MetaMask not installed');
+                }
+
+                provider = new ethers.BrowserProvider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = await provider.getSigner();
+                userAddress = await signer.getAddress();
+
+                document.getElementById('walletAddress').textContent = userAddress;
+                document.getElementById('walletInfo').style.display = 'block';
+                document.getElementById('connectWallet').style.display = 'none';
+
+                showStatus('Wallet connected successfully!', 'success');
+                updateBridgeButton();
+
+            } catch (error) {
+                showStatus('Failed to connect wallet: ' + error.message, 'error');
+            }
+        }
+
+        async function switchNetwork(chainId) {
+            try {
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: chainId }],
+                });
+            } catch (switchError) {
+                // This error code indicates that the chain has not been added to MetaMask
+                if (switchError.code === 4902) {
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [NETWORKS[chainId]],
+                        });
+                    } catch (addError) {
+                        throw new Error('Failed to add network');
+                    }
+                } else {
+                    throw switchError;
+                }
+            }
+        }
+
+        function updateBridgeButton() {
+            const sourceChain = document.getElementById('sourceChain').value;
+            const destChain = document.getElementById('destChain').value;
+            const tokenAddress = document.getElementById('tokenAddress').value;
+            const tokenSymbol = document.getElementById('tokenSymbol').value;
+            const amount = document.getElementById('amount').value;
+            const recipient = document.getElementById('recipient').value;
+
+            const isEnabled = userAddress && sourceChain && destChain && tokenAddress &&
+                            tokenSymbol && amount && recipient;
+
+            document.getElementById('bridgeButton').disabled = !isEnabled;
+        }
+
+        // Add event listeners for form validation
+        ['sourceChain', 'destChain', 'tokenAddress', 'tokenSymbol', 'amount', 'recipient'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateBridgeButton);
+        });
+
+        async function bridgeTokens() {
+            try {
+                const sourceChain = document.getElementById('sourceChain').value;
+                const destChain = document.getElementById('destChain').value;
+                const tokenAddress = document.getElementById('tokenAddress').value;
+                const tokenSymbol = document.getElementById('tokenSymbol').value;
+                const amount = document.getElementById('amount').value;
+                const recipient = document.getElementById('recipient').value;
+
+                if (sourceChain === destChain) {
+                    throw new Error('Source and destination chains must be different');
+                }
+
+                // Switch to source network
+                await switchNetwork('0x' + parseInt(sourceChain).toString(16));
+                showStatus('Switching to source network...', 'info');
+
+                // Get contract addresses for source chain
+                const contractConfig = CONTRACT_ADDRESSES[sourceChain];
+                if (!contractConfig) {
+                    throw new Error('Contract addresses not configured for this network');
+                }
+
+                // Initialize contract
+                const tokenBridgeAbi = [
+                    "function bridgeTokens(address token, string memory symbol, uint256 amount, address recipient, bytes memory destChain) external payable"
+                ];
+
+                tokenBridgeContract = new ethers.Contract(
+                    contractConfig.tokenGateway, // This should be the TokenBridge contract address
+                    tokenBridgeAbi,
+                    signer
+                );
+
+                // Convert amount to proper decimals (assuming 18 decimals for demo)
+                const amountInWei = ethers.parseEther(amount);
+
+                // Prepare destination chain bytes (simplified for demo)
+                const destChainBytes = ethers.toUtf8Bytes(destChain);
+
+                showStatus('Approving token transfer...', 'info');
+
+                // First approve the token
+                const tokenAbi = ["function approve(address spender, uint256 amount) public returns (bool)"];
+                const tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);
+                const approveTx = await tokenContract.approve(contractConfig.tokenGateway, amountInWei);
+                await approveTx.wait();
+
+                showStatus('Executing bridge transaction...', 'info');
+
+                // Execute bridge transaction
+                const tx = await tokenBridgeContract.bridgeTokens(
+                    tokenAddress,
+                    tokenSymbol,
+                    amountInWei,
+                    recipient,
+                    destChainBytes
+                );
+
+                showStatus('Transaction submitted! Waiting for confirmation...', 'info');
+
+                const receipt = await tx.wait();
+
+                showStatus(`Bridge transaction successful! TX Hash: ${receipt.hash}`, 'success');
+
+            } catch (error) {
+                showStatus('Bridge failed: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+        }
+
+        // Check if wallet is already connected
+        window.addEventListener('load', async () => {
+            if (window.ethereum && window.ethereum.selectedAddress) {
+                await connectWallet();
+            }
+        });
+    </script>
+</body>
+</html>

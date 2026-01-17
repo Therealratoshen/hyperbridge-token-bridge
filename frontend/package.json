@@ -1,0 +1,18 @@
+{
+  "name": "hyperbridge-token-bridge-frontend",
+  "version": "1.0.0",
+  "description": "Frontend interface for Hyperbridge Token Bridge",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 server.py",
+    "serve": "npx http-server -p 8000 -c-1",
+    "dev": "npx live-server --port=8000 --host=localhost"
+  },
+  "keywords": ["blockchain", "web3", "bridge", "hyperbridge"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "live-server": "^1.2.2"
+  }
+}
