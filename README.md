@@ -9,7 +9,7 @@ This project implements the Polkadot Codecamp Challenge #1, building a cross-cha
 ## 🏗️ Architecture
 
 ### Smart Contracts
-- **`TokenBridge.sol`**: Main bridge contract with fee handling and counter functionality
+- **`TokenBridge.sol`**: **Professional Bridge Contract** - Challenge-compliant with enterprise features, fee handling, and counter functionality
 
 ### Frontend
 - **Web Interface**: React-style HTML/CSS/JavaScript application
@@ -18,9 +18,10 @@ This project implements the Polkadot Codecamp Challenge #1, building a cross-cha
 
 ## 📋 Implementation Details
 
-### TokenBridge.sol Contract Architecture
+### Contract Architecture
 
-The `TokenBridge.sol` contract combines cross-chain token bridging functionality with basic counter operations. It serves as a user-friendly wrapper around Hyperbridge's `TokenGateway`, implementing professional fee handling for cross-chain token transfers while including demonstration counter functionality.
+#### TokenBridge.sol (Unified Professional Implementation)
+The `TokenBridge.sol` contract combines challenge compliance with enterprise-grade features. It provides both the basic bridging functionality required by the challenge and advanced professional features for production use.
 
 #### Core Components
 

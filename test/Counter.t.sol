@@ -8,7 +8,7 @@ contract CounterTest is Test {
     TokenBridge public tokenBridge;
 
     function setUp() public {
-        // Deploy TokenBridge with dummy addresses for testing counter functionality
+        // Deploy TokenBridgeEnhanced with dummy addresses for testing counter functionality
         address dummyGateway = address(0x123);
         address dummyFeeToken = address(0x456);
         tokenBridge = new TokenBridge(dummyGateway, dummyFeeToken);

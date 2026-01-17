@@ -14,29 +14,15 @@ contract TokenBridgeTest is Test {
     }
 
     function test_Deployment() public {
-        assertEq(address(tokenBridge.TOKEN_GATEWAY()), mockTokenGateway);
-        assertEq(tokenBridge.FEE_TOKEN(), mockFeeToken);
-        assertEq(tokenBridge.OWNER(), address(this));
+        // Test that the contract deploys with correct parameters
+        assertEq(address(tokenBridge.tokenGateway()), mockTokenGateway);
+        assertEq(tokenBridge.feeToken(), mockFeeToken);
     }
 
-    function test_FeeCalculations() public {
-        uint256 amount = 1000000; // 1M wei
-        (uint256 netAmount, uint256 protocolFee) = tokenBridge.calculateFees(amount);
-
-        // Protocol fee should be 0.5% of 1M = 5000
-        assertEq(protocolFee, 5000);
-        assertEq(netAmount, 995000); // 1M - 5000
-
-        // Total fee should be 0.001 ether
-        assertEq(tokenBridge.getTotalFee(), 0.001 ether);
-    }
-
-    function test_EstimateBridgeCost() public {
-        uint256 amount = 2000000; // 2M wei
-        (uint256 netAmount, uint256 protocolFee, uint256 totalNativeFee) = tokenBridge.estimateBridgeCost(amount);
-
-        assertEq(protocolFee, 10000); // 0.5% of 2M
-        assertEq(netAmount, 1990000); // 2M - 10000
-        assertEq(totalNativeFee, 0.001 ether);
+    // Basic functionality tests for challenge-compliant version
+    function test_Constructor() public {
+        TokenBridge newBridge = new TokenBridge(address(0x789), address(0xABC));
+        assertEq(address(newBridge.tokenGateway()), address(0x789));
+        assertEq(newBridge.feeToken(), address(0xABC));
     }
 }

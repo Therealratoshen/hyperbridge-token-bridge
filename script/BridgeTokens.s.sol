@@ -27,7 +27,7 @@ contract BridgeTokens is Script {
         IERC20 token = IERC20(tokenAddress);
         token.approve(bridgeAddress, amount);
 
-        // Bridge tokens
+        // Bridge tokens using professional version with fees
         TokenBridge bridge = TokenBridge(bridgeAddress);
         bridge.bridgeTokens{value: bridge.getTotalFee()}(
             tokenAddress,
@@ -65,6 +65,29 @@ contract BridgeTokens is Script {
 
         vm.stopBroadcast();
 
+        // Bridge transaction completed - check TokenBridge for event logs
+    }
+
+    // Helper function to bridge with specific parameters from Sepolia to Paseo
+    function bridgeUSDCToPaseo(uint256 amount, address recipient) external {
+        vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
+
+        address bridgeAddress = vm.envAddress("SEPOLIA_BRIDGE_ADDRESS");
+
+        // Approve USDC
+        IERC20(USDC_SEPOLIA).approve(bridgeAddress, amount);
+
+        // Bridge to Paseo
+        TokenBridge(bridgeAddress).bridgeTokens{value: 0.001 ether}(
+            USDC_SEPOLIA,
+            "USDC",
+            amount,
+            recipient,
+            bytes("PASEO")
+        );
+
+        vm.stopBroadcast();
+
         // Note: Console logging would require import {console} from forge-std
         // console.log("Bridged", amount, "USDC to", recipient, "on Sepolia");
     }
@@ -79,7 +102,7 @@ contract BridgeTokens is Script {
         IERC20(USDC_SEPOLIA).approve(bridgeAddress, amount);
 
         // Bridge to Paseo
-        TokenBridge(bridgeAddress).bridgeTokens{value: 0.001 ether}(
+        TokenBridgeEnhanced(bridgeAddress).bridgeTokens{value: 0.001 ether}(
             USDC_SEPOLIA,
             "USDC",
             amount,
